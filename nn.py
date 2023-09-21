@@ -2,19 +2,12 @@ import numpy as np
 import pandas as pd
 import tensorflow as tf
 from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import StandardScaler, MinMaxScaler
 from sklearn.metrics import mean_absolute_error, mean_squared_error
+from sklearn.feature_selection import SelectKBest, f_regression
 from tensorflow.keras.layers import (
     Dense,
-    BatchNormalization,
     Dropout,
-    LSTM,
-    Bidirectional,
-    Attention,
-    Embedding,
-    Conv1D,
-    MaxPooling1D,
-    Flatten,
 )
 from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.callbacks import (
@@ -25,12 +18,12 @@ from tensorflow.keras.callbacks import (
     TensorBoard,
 )
 import matplotlib.pyplot as plt
-from sklearn.preprocessing import MinMaxScaler
-from sklearn.decomposition import PCA
-from sklearn.feature_selection import SelectKBest, f_regression
 
 # Load the data
 data = pd.read_csv('prices.csv')
+
+# Handle missing values by filling them with the mean of the column
+data.fillna(data.mean(), inplace=True)
 
 # Feature Engineering: Calculate additional technical indicators
 data['10_day_ma'] = data['close'].rolling(window=10).mean()
@@ -53,15 +46,16 @@ selector = SelectKBest(score_func=f_regression, k=4)
 X_train = selector.fit_transform(X_train, y_train)
 X_test = selector.transform(X_test)
 
-# Build a more advanced model with Convolutional Neural Network (CNN)
+# Build a more advanced model with a deep neural network
 model = tf.keras.Sequential([
     tf.keras.layers.Input(shape=(X_train.shape[1],)),  # Input layer with selected features
-    Dense(64, activation='relu'),  # Dense layer
+    Dense(128, activation='relu'),  # Dense layer with more neurons
     Dropout(0.4),  # Dropout layer for regularization
+    Dense(64, activation='relu'),  # Additional dense layer
     Dense(1)  # Output layer with 1 unit (regression)
 ])
 
-# Compile the model with a custom optimizer (Adam) and Mean Absolute Error loss
+# Compile the model with Adam optimizer and Mean Absolute Error loss
 optimizer = Adam(learning_rate=1e-3)
 model.compile(optimizer=optimizer, loss='mean_absolute_error')
 
